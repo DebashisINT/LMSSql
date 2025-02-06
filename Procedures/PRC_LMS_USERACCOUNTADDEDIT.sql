@@ -20,10 +20,14 @@ ALTER PROCEDURE [dbo].[PRC_LMS_USERACCOUNTADDEDIT]
 	@GROUP INT=NULL,
 	@REMARKS NVARCHAR(200)=NULL,
 	@ISACTIVE char(2)=NULL,
-	@RETURN_VALUE nvarchar(500)=NULL OUTPUT
+	@RETURN_VALUE nvarchar(500)=NULL OUTPUT,
+	--REV 1.0
+	@IsRetryWithoutWatchingVideo INT=0
+	--REV 1.0 END
 )
 AS
 /***************************************************************************************************************************************
+REV 1.0     06-02-2025    V1.0.1      Priti      Add a user setting for quiz retries with the following options:B.The user can retry incorrect answers directly without watching the video 
 ***************************************************************************************************************************************/
 BEGIN
 	
@@ -89,11 +93,11 @@ BEGIN
 		select U.user_name, U.user_loginId, U.user_password, U.user_branchId, U.user_group, U.USER_REMARKS, 
 			CTC.emp_Designation, CTC.emp_Department, CTC.emp_reportTo, 
 			ISNULL(cnt_firstName, '') + ' ' + ISNULL(cnt_middleName, '') + ' ' + ISNULL(cnt_lastName, '') +'['+cnt_shortName+']' AS emp_reportTo_name,
-			user_inactive
+			user_inactive,isnull(IsRetryWithoutWatchingVideo,0)IsRetryWithoutWatchingVideo
 		FROM tbl_master_user U 
-		INNER JOIN tbl_trans_employeeCTC CTC ON U.user_contactId=CTC.emp_cntId
-		INNER JOIN tbl_master_employee EMP ON CTC.emp_reportTo=EMP.EMP_ID
-		INNER JOIN tbl_master_contact CNT ON EMP.emp_contactId=CNT.cnt_internalId
+		LEFT OUTER JOIN tbl_trans_employeeCTC CTC ON U.user_contactId=CTC.emp_cntId
+		LEFT OUTER JOIN tbl_master_employee EMP ON CTC.emp_reportTo=EMP.EMP_ID
+		LEFT OUTER JOIN tbl_master_contact CNT ON EMP.emp_contactId=CNT.cnt_internalId
 		WHERE U.user_loginId=@USER_LOGINID
 		
 
@@ -110,7 +114,11 @@ BEGIN
 			set @Old_b_id = (select user_branchId from tbl_master_user where user_loginId=@USER_LOGINID)
 
 			UPDATE TBL_MASTER_USER SET user_name=@firstname,user_loginId=@USER_NEWLOGINID, user_password=@PASSWORD, User_branchId=@BRANCHID, 
-				user_group=@GROUP, USER_REMARKS=@REMARKS, user_inactive=@ISACTIVE WHERE user_loginId=@USER_LOGINID
+				user_group=@GROUP, USER_REMARKS=@REMARKS, user_inactive=@ISACTIVE 
+				--REV 1.0
+				,IsRetryWithoutWatchingVideo=@IsRetryWithoutWatchingVideo
+				--REV 1.0 END
+				WHERE user_loginId=@USER_LOGINID
 
 			UPDATE tbl_trans_employeeCTC SET emp_Designation=@DESIGNATION, emp_Department=@DEPT, emp_reportTo=@REPORTTO, emp_branch=@BRANCHID 
 			WHERE emp_cntId=@CNTID

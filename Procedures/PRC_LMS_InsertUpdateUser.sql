@@ -25,11 +25,16 @@ ALTER PROCEDURE [dbo].[PRC_LMS_InsertUpdateUser]
 @istargetsettings INT=NULL,
 @user_id BIGINT=NULL,
 @ACTION NVARCHAR(MAX),
-@IsAllDataInPortalwithHeirarchy INT=0
+@IsAllDataInPortalwithHeirarchy INT=0,
+--REV 1.0
+@IsRetryWithoutWatchingVideo INT=0
+--REV 1.0 END
 
 ) --WITH ENCRYPTION
 AS
 /***************************************************************************************************************************************
+REV 1.0     06-02-2025    V1.0.1      Priti      Add a user setting for quiz retries with the following options:B.The user can retry incorrect answers directly without watching the video  
+
 ***************************************************************************************************************************************/
 BEGIN
 	DECLARE @sqlStrTable NVARCHAR(MAX)
@@ -51,11 +56,17 @@ BEGIN
 				user_lastsegement,user_TimeForTickerRefrsh,user_superuser,
 				user_EntryProfile,user_AllowAccessIP,user_inactive,user_maclock,Gps_Accuracy, USER_REMARKS,
 				HierarchywiseTargetSettings, IsAllDataInPortalwithHeirarchy
+				--REV 1.0
+				,IsRetryWithoutWatchingVideo
+				--REV 1.0 END
 			)
 			VALUES (@txtusername,@b_id,@txtuserid,@Encryptpass,@contact,@usergroup,@CreateDate,@CreateUser ,
 				( select top 1 grp_segmentId from tbl_master_userGroup where grp_id in(@usergroup)),
 				86400,@superuser,@ddDataEntry,@IPAddress,@isactive,@isactivemac,@txtgps,
 				@Remarks,@istargetsettings, @IsAllDataInPortalwithHeirarchy
+				--REV 1.0
+				,@IsRetryWithoutWatchingVideo
+				--REV 1.0 END
 			)
 
 			set @user_id=SCOPE_IDENTITY();
@@ -107,6 +118,9 @@ BEGIN
 			Update tbl_master_user SET user_name=@txtusername,user_branchId=@b_id,user_group=@usergroup,user_loginId=@txtuserid,user_inactive=@isactive,user_maclock=@isactivemac,user_contactid=@contact,
 			LastModifyDate=@CreateDate,LastModifyUser=@CreateUser,user_superuser =@superuser,user_EntryProfile=@ddDataEntry,user_AllowAccessIP=@IPAddress,Gps_Accuracy=@txtgps,HierarchywiseTargetSettings=@istargetsettings
 			,USER_REMARKS= @Remarks
+			--REV 1.0
+			,IsRetryWithoutWatchingVideo=@IsRetryWithoutWatchingVideo
+			--REV 1.0 END
 			 Where  user_id =@user_id
 
 			 -- Branch Update
